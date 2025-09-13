@@ -28,48 +28,57 @@ import com.tbuonomo.viewpagerdotsindicator.compose.type.WormIndicatorType
 
 @Composable
 fun BannerView(modifier: Modifier = Modifier) {
+    // State to hold the list of banner image URLs
     var bannerList by remember {
         mutableStateOf<List<String>>(emptyList())
     }
 
+    // Fetch banner URLs from Firestore when the Composable is first composed
     LaunchedEffect(Unit) {
         Firebase.firestore
             .collection("data")
             .document("banners")
             .get().addOnCompleteListener {
+                // Cast the "urls" field to a List<String> and update state
                 bannerList = it.result.get("urls") as List<String>
             }
     }
 
+    // Main layout column
     Column(
         modifier = modifier
     ) {
+        // Pager state for horizontal scrolling banners, starting at index 0
         val pagerState = rememberPagerState(0) {
-            bannerList.size
+            bannerList.size // total pages = number of banners
         }
 
+        // Horizontal pager for banners
         HorizontalPager(
             state = pagerState,
-            pageSpacing = 24.dp,
-            modifier = Modifier.height(125.dp)
+            pageSpacing = 24.dp, // space between pages
+            modifier = Modifier.height(125.dp) // fixed banner height
         ) {
+            // Each page shows an image loaded asynchronously
             AsyncImage(
-                model = bannerList[it],
+                model = bannerList[it], // load image from bannerList
                 contentDescription = "banner",
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .fillMaxWidth() // take full width
+                    .clip(RoundedCornerShape(16.dp)) // rounded corners
                     .clickable(
-                        onClick = { }
+                        onClick = { } // placeholder for click action
                     ),
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Crop, // crop image to fill bounds
             )
         }
 
+        // Spacer between pager and dots indicator
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Dots indicator showing current page
         DotsIndicator(
-            dotCount = bannerList.size,
+            dotCount = bannerList.size, // number of dots = number of banners
             type = WormIndicatorType(
                 dotsGraphic = DotGraphic(
                     size = 6.dp,
@@ -79,10 +88,10 @@ fun BannerView(modifier: Modifier = Modifier) {
                 ),
                 wormDotGraphic = DotGraphic(
                     size = 12.dp,
-                    color = Color.Black
+                    color = Color.Black // active dot color
                 )
             ),
-            pagerState = pagerState
+            pagerState = pagerState // link dots to pager state
         )
     }
 }

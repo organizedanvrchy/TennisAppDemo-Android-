@@ -15,8 +15,6 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // **** Placeholder Header for this screen.
-        // Change to Search Bar when Implemented ****
         ProfileView()
     }
 }

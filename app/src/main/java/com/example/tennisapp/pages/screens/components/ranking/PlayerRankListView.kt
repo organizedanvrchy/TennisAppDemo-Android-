@@ -34,8 +34,10 @@ import com.example.tennisapp.viewmodel.TennisViewModel
 
 @Composable
 fun PlayerRankListView(modifier: Modifier = Modifier, viewModel: TennisViewModel) {
+    // Observe rankings state from ViewModel
     val rankings by viewModel.rankings
 
+    // Load rankings when Composable is first launched
     LaunchedEffect(Unit) {
         viewModel.loadRankings()
     }
@@ -43,7 +45,9 @@ fun PlayerRankListView(modifier: Modifier = Modifier, viewModel: TennisViewModel
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Header
+        // ---------------------------
+        // Header row for rankings table
+        // ---------------------------
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -52,40 +56,34 @@ fun PlayerRankListView(modifier: Modifier = Modifier, viewModel: TennisViewModel
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Rnk",
+                "Rnk", // Rank column
                 modifier = Modifier.weight(1f),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    fontFamily = lexendBold
-                )
+                style = TextStyle(fontSize = 12.sp, fontFamily = lexendBold)
             )
             Text(
-                " ",
+                " ", // Placeholder for flag column
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "Name",
+                "Name", // Player name column
                 modifier = Modifier.weight(2.5f),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    fontFamily = lexendBold
-                )
+                style = TextStyle(fontSize = 12.sp, fontFamily = lexendBold)
             )
             Text(
-                "Pts",
+                "Pts", // Points column
                 modifier = Modifier
                     .weight(1.5f)
                     .padding(start = 12.dp),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    fontFamily = lexendBold
-                )
+                style = TextStyle(fontSize = 12.sp, fontFamily = lexendBold)
             )
         }
 
+        // Divider under header
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-        // Player rows
+        // ---------------------------
+        // LazyColumn for player rows
+        // ---------------------------
         LazyColumn {
             items(rankings) { player ->
                 Row(
@@ -94,20 +92,17 @@ fun PlayerRankListView(modifier: Modifier = Modifier, viewModel: TennisViewModel
                         .padding(vertical = 8.dp, horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Rank
+                    // Rank column
                     Text(
                         text = "${player.position}",
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 4.dp),
-                        style = TextStyle(
-                            fontSize = 12.sp,
-                            fontFamily = lexendLight
-                        )
+                        style = TextStyle(fontSize = 12.sp, fontFamily = lexendLight)
                     )
-                    // Flag
-                    val countryAcro = countryAcroMap[player.player.country.acronym] ?: "unknown"
 
+                    // Player flag
+                    val countryAcro = countryAcroMap[player.player.country.acronym] ?: "unknown"
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data("file:///android_asset/flags/$countryAcro.svg")
@@ -118,34 +113,33 @@ fun PlayerRankListView(modifier: Modifier = Modifier, viewModel: TennisViewModel
                             .size(20.dp)
                             .weight(1f)
                     )
-                    // Name
+
+                    // Player name column
                     Text(
                         text = player.player.name,
                         modifier = Modifier
                             .weight(2.5f)
                             .padding(2.dp)
-                            .basicMarquee()
+                            .basicMarquee() // Scroll long names
                             .clickable {
-                                viewModel.selectPlayer(player) // set selected player
-                                GlobalNavigation.navController.navigate("players/${player.player.id}")                            },
-                        style = TextStyle(
-                            fontSize = 12.sp,
-                            fontFamily = lexendLight
-                        )
+                                viewModel.selectPlayer(player) // Update selected player in ViewModel
+                                GlobalNavigation.navController.navigate("players/${player.player.id}") // Navigate to PlayerScreen
+                            },
+                        style = TextStyle(fontSize = 12.sp, fontFamily = lexendLight)
                     )
-                    // Points
+
+                    // Points column
                     Text(
                         text = "${player.point}",
                         modifier = Modifier
                             .weight(1.5f)
                             .padding(start = 8.dp)
                             .basicMarquee(),
-                        style = TextStyle(
-                            fontSize = 12.sp,
-                            fontFamily = lexendLight
-                        )
+                        style = TextStyle(fontSize = 12.sp, fontFamily = lexendLight)
                     )
                 }
+
+                // Divider between rows
                 HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
             }
         }

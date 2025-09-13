@@ -45,23 +45,24 @@ import com.google.firebase.firestore.firestore
 
 @Composable
 fun ProfileView() {
+    // Get current Firebase user
     val currUser = FirebaseAuth.getInstance().currentUser
 
-    var name by remember {
-        mutableStateOf("")
-    }
+    // ---------------------------
+    // State variables for user info
+    // ---------------------------
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var userImage by remember { mutableStateOf("") }
 
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var userImage by remember {
-        mutableStateOf("")
-    }
-
+    // State to control dropdown menu expansion
     var expanded by remember { mutableStateOf(false) }
 
+    // ---------------------------
+    // Load user data from Firestore
+    // ---------------------------
     LaunchedEffect(Unit) {
+        // Placeholder image from Firestore
         Firebase.firestore
             .collection("data")
             .document("placeholder")
@@ -69,27 +70,31 @@ fun ProfileView() {
                 userImage = imgTask.result.get("imageUrl").toString()
             }
 
+        // Current user's details (name, email)
         Firebase.firestore
             .collection("users")
             .document(currUser?.uid!!)
             .get().addOnCompleteListener { detailTask ->
-                name = detailTask.result.get("name").toString().split(" ")[0]
-                email = detailTask.result.get("email").toString().split(" ")[0]
+                name = detailTask.result.get("name").toString().split(" ")[0] // first name only
+                email = detailTask.result.get("email").toString().split(" ")[0] // first part only
             }
     }
 
+    // ---------------------------
+    // Main profile layout
+    // ---------------------------
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Card with profile picture, name, and email
         ProfileInfoView(name, email, userImage)
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Box(
-            contentAlignment = Alignment.Center
-        ) {
+        // Dropdown for account options
+        Box(contentAlignment = Alignment.Center) {
             TextButton(onClick = { expanded = true }) {
                 Text(
                     text = "Account Options",
@@ -97,11 +102,12 @@ fun ProfileView() {
                     color = Color.LightGray
                 )
             }
+
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                ProfileOptionsView(name)
+                ProfileOptionsView(name) // Account options like reset/delete
             }
         }
     }
@@ -109,6 +115,7 @@ fun ProfileView() {
 
 @Composable
 fun ProfileInfoView(name: String, email: String, userImage: String) {
+    // Card displaying user's profile info
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -120,6 +127,9 @@ fun ProfileInfoView(name: String, email: String, userImage: String) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // ---------------------------
+            // Profile Image
+            // ---------------------------
             AsyncImage(
                 model = userImage,
                 contentDescription = "profile",
@@ -129,33 +139,28 @@ fun ProfileInfoView(name: String, email: String, userImage: String) {
                     .clip(CircleShape)
                     .size(200.dp)
                     .border(2.dp, Color.Black, CircleShape)
-                    .padding(20.dp),
+                    .padding(20.dp)
             )
+
+            // ---------------------------
+            // Name and Email
+            // ---------------------------
             Row(
-                modifier = Modifier
-                    .padding(8.dp),
+                modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Labels
                 Column {
-                    Text(
-                        text = "Name:",
-                        fontFamily = lexendSemiBold,
-                    )
-                    Text(
-                        text = "Email:",
-                        fontFamily = lexendSemiBold,
-                    )
+                    Text(text = "Name:", fontFamily = lexendSemiBold)
+                    Text(text = "Email:", fontFamily = lexendSemiBold)
                 }
 
                 Spacer(modifier = Modifier.width(4.dp))
 
+                // Values
                 Column {
-                    Text(
-                        text = name,
-                        fontFamily = lexend,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
+                    Text(text = name, fontFamily = lexend, modifier = Modifier.padding(horizontal = 8.dp))
                     Text(
                         text = if (email == "null") "No Email" else email,
                         fontFamily = lexend,
@@ -171,13 +176,17 @@ fun ProfileInfoView(name: String, email: String, userImage: String) {
 fun ProfileOptionsView(name: String) {
     val context = LocalContext.current
 
+    // State for dialog and password input
     var showDialog by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
 
     Column {
+        // ---------------------------
+        // Reset Password Button
+        // ---------------------------
         TextButton(onClick = {
-            if(name != "Guest"){
-                showDialog = true
+            if(name != "Guest") {
+                showDialog = true // Open password dialog
             } else {
                 AppUtil.showToast(context = context, message = "Guest users cannot reset password")
             }
@@ -187,9 +196,12 @@ fun ProfileOptionsView(name: String) {
 
         Spacer(modifier = Modifier.width(10.dp))
 
+        // ---------------------------
+        // Delete Account Button
+        // ---------------------------
         TextButton(onClick = {
-            if(name != "Guest"){
-                /*TODO*/
+            if(name != "Guest") {
+                /*TODO*/ // Delete logic to implement
             } else {
                 AppUtil.showToast(context = context, message = "Guest users cannot delete account")
             }
@@ -198,6 +210,9 @@ fun ProfileOptionsView(name: String) {
         }
     }
 
+    // ---------------------------
+    // Password dialog for reset
+    // ---------------------------
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -213,7 +228,7 @@ fun ProfileOptionsView(name: String) {
             confirmButton = {
                 Button(onClick = {
                     showDialog = false
-
+                    // TODO: handle password submission
                 }) {
                     Text("Submit")
                 }

@@ -30,8 +30,10 @@ fun TournamentListView(
     modifier: Modifier = Modifier,
     viewModel: TennisViewModel
 ) {
+    // Observe tournaments state from ViewModel
     val tournaments by viewModel.tournaments
 
+    // Load tournaments when Composable is first launched
     LaunchedEffect(Unit) {
         viewModel.loadTournaments()
     }
@@ -39,7 +41,9 @@ fun TournamentListView(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Header
+        // ---------------------------
+        // Header row for tournaments table
+        // ---------------------------
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -48,22 +52,25 @@ fun TournamentListView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Date",
+                "Date", // Tournament date column
                 modifier = Modifier.weight(1f),
                 fontSize = 12.sp,
                 fontFamily = lexendBold
             )
             Text(
-                "Tournament Name",
+                "Tournament Name", // Tournament name column
                 modifier = Modifier.weight(2.5f),
                 fontSize = 12.sp,
                 fontFamily = lexendBold
             )
         }
 
+        // Divider under header
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-        // Tournament Rows
+        // ---------------------------
+        // LazyColumn for tournament rows
+        // ---------------------------
         LazyColumn {
             items(tournaments) { tournament ->
                 Row(
@@ -72,7 +79,7 @@ fun TournamentListView(
                         .padding(vertical = 8.dp, horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Date
+                    // Date column (showing only first 4 characters, e.g., year)
                     Text(
                         text = tournament.date.take(4),
                         modifier = Modifier
@@ -81,22 +88,24 @@ fun TournamentListView(
                         fontSize = 12.sp,
                         fontFamily = lexendLight
                     )
-                    // Name
+
+                    // Tournament name column
                     Text(
                         text = tournament.name,
                         modifier = Modifier
                             .weight(2.5f)
                             .padding(2.dp)
-                            .basicMarquee()
+                            .basicMarquee() // Scroll long tournament names
                             .clickable {
-                                viewModel.selectTournament(tournament)
-                                GlobalNavigation.navController.navigate("tournament/${tournament.id}")
+                                viewModel.selectTournament(tournament) // Update selected tournament in ViewModel
+                                GlobalNavigation.navController.navigate("tournament/${tournament.id}") // Navigate to TournamentScreen
                             },
                         fontSize = 12.sp,
                         fontFamily = lexendLight
                     )
                 }
 
+                // Divider between rows
                 HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
             }
         }

@@ -21,17 +21,21 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 class TennisRepository {
+    // OkHttp client for making HTTP requests
     private val client = OkHttpClient()
+
+    // Gson for parsing JSON responses
     private val gson = Gson()
 
+    // Firebase Remote Config for managing API keys dynamically
     private val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig.apply {
-        // Configure Remote Config
+        // Configure Remote Config with fetch interval (1 hour here)
         setConfigSettingsAsync(
             remoteConfigSettings {
                 minimumFetchIntervalInSeconds = 3600
             }
         )
-        // Set default value to avoid missing key errors
+        // Provide default values in case keys are missing from Remote Config
         setDefaultsAsync(mapOf(
             "API_KEY" to "",
             "API_KEY_TWO" to "",
@@ -39,25 +43,32 @@ class TennisRepository {
         ))
     }
 
+    // Cached API key to avoid fetching multiple times
     private var cachedApiKey: String? = null
 
-    // Helper function to fetch and return API key
+    // Fetch API key from Remote Config (with caching to reduce repeated fetches)
     private suspend fun fetchApiKey(): String {
         return cachedApiKey ?: run {
             try {
+                // Fetch and activate latest Remote Config values
                 remoteConfig.fetchAndActivate().await()
+                // Retrieve specific API key and trim spaces
                 remoteConfig.getValue("API_KEY_THREE").asString().trim().also {
                     cachedApiKey = it
                 }
             } catch (e: Exception) {
+                // Log error if fetch fails
                 e.printStackTrace()
                 ""
             }
         }
     }
+
+    // Fetch ATP player rankings from API
     suspend fun getPlayerRankings(): List<PlayerRanking> {
         val apiKey = fetchApiKey()
 
+        // Build HTTP request with headers
         val request = Request.Builder()
             .url("https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/atp/ranking/singles/")
             .get()
@@ -65,6 +76,7 @@ class TennisRepository {
             .addHeader("x-rapidapi-host", "tennis-api-atp-wta-itf.p.rapidapi.com")
             .build()
 
+        // Execute request and parse response
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw Exception("API call failed: ${response.code}")
             val body = response.body?.string() ?: "{}"
@@ -73,6 +85,7 @@ class TennisRepository {
         }
     }
 
+    // Fetch details for a specific player by ID
     suspend fun getPlayerDetails(playerId: Int): PlayerDetails {
         val apiKey = fetchApiKey()
 
@@ -86,6 +99,7 @@ class TennisRepository {
         client.newCall(request).execute().use { response ->
             val body = response.body?.string() ?: "{}"
             if (!response.isSuccessful) {
+                // Log detailed error message
                 Log.e("TennisRepository", "API failed: ${response.code} Body: $body")
                 throw Exception("API call failed: ${response.code}")
             }
@@ -94,7 +108,7 @@ class TennisRepository {
         }
     }
 
-    // Get Live Tennis Event
+    // Fetch list of live tennis events
     suspend fun getRecentEventDetails(): List<Event> {
         val apiKey = fetchApiKey()
 
@@ -117,6 +131,7 @@ class TennisRepository {
         }
     }
 
+    // Fetch tournament calendar information (example for year 2024)
     suspend fun getTournamentInfo1(): List<TournamentInfo> {
         val apiKey = fetchApiKey()
 
@@ -135,6 +150,7 @@ class TennisRepository {
         }
     }
 
+    // Fetch tournament season information (example tournament ID 344)
     suspend fun getTournamentInfo2(): List<TournamentInfo>{
         val apiKey = fetchApiKey()
 
@@ -153,6 +169,7 @@ class TennisRepository {
         }
     }
 
+    // Fetch tournament results/details by tournament ID
     suspend fun getTournamentDetails(tournamentId: Int): TournamentDetails {
         val apiKey = fetchApiKey()
 

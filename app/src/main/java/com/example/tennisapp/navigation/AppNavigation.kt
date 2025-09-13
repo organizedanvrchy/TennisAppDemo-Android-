@@ -45,18 +45,24 @@ import com.example.tennisapp.viewmodel.TennisViewModelFactory
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
+// Main Composable that sets up navigation, top/bottom bars, and screens
 @SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
+    // AuthViewModel using default factory
     authViewModel: AuthViewModel = viewModel(),
+    // TennisViewModel using a custom factory with TennisRepository
     tennisViewModel: TennisViewModel = viewModel(
         factory = TennisViewModelFactory(TennisRepository())
     )
 ) {
+    // Create NavController for navigation
     val navController = rememberNavController()
+    // Store navController globally for external navigation usage
     GlobalNavigation.navController = navController
 
+    // Determine if user is logged in using Firebase Auth
     val isLoggedIn = Firebase.auth.currentUser != null
     val firstScreen = if (isLoggedIn) "home" else "auth"
 
@@ -68,17 +74,21 @@ fun AppNavigation(
         NavItem("Logout", Icons.Default.Lock, "logout")
     )
 
+    // Scaffold for top bar, bottom bar, and main content
     Scaffold(
         topBar = {
+            // Observe current back stack entry to conditionally show top bar
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
-            // Only show header on main screens (not auth/login/signup)
+            // Only show header on main screens (hide on auth/login/signup/forgot)
             if (currentRoute !in listOf("auth", "login", "signup", "forgot")) {
                 HeaderView(
-                    // UNCOMMENT BELOW FOR MOCK PLAYERS
+                    // Use live rankings from tennisViewModel
+                    // Uncomment below line for mock players if needed
                     // players = (tennisViewModel.rankings.value.ifEmpty { MockPlayers.rankings }).map { it.player },
                     players = tennisViewModel.rankings.value.map { it.player },
+                    // Navigate to player details on click
                     onOpenPlayer = { playerId ->
                         navController.navigate("players/$playerId")
                     }
@@ -89,7 +99,7 @@ fun AppNavigation(
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
-            // Show bottom bar only on main screens
+            // Show bottom navigation bar only on main screens
             if (currentRoute !in listOf("auth", "login", "signup", "forgot")) {
                 NavigationBar {
                     navItems.forEach { item ->
@@ -97,16 +107,19 @@ fun AppNavigation(
                             selected = currentRoute == item.route || navBackStackEntry?.destination?.hierarchy?.any { it.route == item.route } == true,
                             onClick = {
                                 if (item.route == "logout") {
+                                    // Handle logout for guest or authenticated users
                                     val currentUser = Firebase.auth.currentUser
                                     if (currentUser?.email == null) {
                                         authViewModel.signOutGuest()
                                     } else {
                                         authViewModel.logout()
                                     }
+                                    // Navigate to auth screen and clear back stack
                                     navController.navigate("auth") {
                                         popUpTo(0) { inclusive = true }
                                     }
                                 } else {
+                                    // Navigate to selected route with singleTop and state restoration
                                     navController.navigate(item.route) {
                                         popUpTo(item.route) { inclusive = true } // reset Home
                                         launchSingleTop = true
@@ -128,6 +141,7 @@ fun AppNavigation(
             }
         }
     ) { innerPadding ->
+        // Main navigation host with all app routes
         NavHost(
             navController = navController,
             startDestination = firstScreen,
@@ -147,6 +161,7 @@ fun AppNavigation(
                 modifier,
                 tennisViewModel = tennisViewModel,
             ) }
+            // Tournament details route with argument
             composable("tournament/{tournamentId}"){ backStackEntry ->
                 val tournamentId = backStackEntry.arguments?.getString("tournamentId")?.toIntOrNull()
                 TournamentScreen(
@@ -156,18 +171,20 @@ fun AppNavigation(
                 )
             }
 
+            // Player details route with argument
             composable("players/{playerId}") { backStackEntry ->
                 val playerId = backStackEntry.arguments?.getString("playerId")?.toIntOrNull()
                 PlayerScreen(
-                        playerId = playerId,
-                        tennisViewModel = tennisViewModel,
-                        modifier = modifier.fillMaxSize()
+                    playerId = playerId,
+                    tennisViewModel = tennisViewModel,
+                    modifier = modifier.fillMaxSize()
                 )
             }
         }
     }
 }
 
+// Global object to store NavController for app-wide navigation usage
 object GlobalNavigation {
     @SuppressLint("StaticFieldLeak")
     lateinit var navController: NavHostController

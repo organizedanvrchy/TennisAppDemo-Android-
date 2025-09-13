@@ -31,13 +31,16 @@ import com.example.tennisapp.utils.countryAcroMap
 
 @Composable
 fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
+    // Main column layout for the live tournament card
     Column(
         modifier = modifier.padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // ---------------------------
         // Tournament Name
+        // ---------------------------
         Text(
-            modifier = modifier.basicMarquee(),
+            modifier = modifier.basicMarquee(), // marquee effect for long names
             text = shortenTournamentName(event.tournament.uniqueTournament?.name ?: event.tournament.name),
             style = TextStyle(
                 fontSize = 24.sp,
@@ -47,8 +50,10 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Season Name, Location, and Match Date
-        val location = event.tournament.name.substringAfter(", ") // Extract location from full tournament name
+        // ---------------------------
+        // Season, Location, and Match Date
+        // ---------------------------
+        val location = event.tournament.name.substringAfter(", ") // Extract location from tournament name
 
         Text(
             modifier = modifier.basicMarquee(),
@@ -59,12 +64,15 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
             )
         )
 
-        // Player Names
+        // ---------------------------
+        // Player Names and Flags
+        // ---------------------------
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Home player/team
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -72,21 +80,19 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
                     .basicMarquee()
                     .weight(1f)
             ) {
-                // Home team flag
                 val homeCountryCode = if (event.homeTeam.subTeams.isNotEmpty()) {
                     event.homeTeam.subTeams.first().country?.alpha3
                 } else {
                     event.homeTeam.country?.alpha3
                 } ?: "unknown"
 
-                // Log homeCountryCode value for error testing
+                // Log for debugging flag loading
                 Log.d("LiveTournamentView", "Loading flag: $homeCountryCode")
 
                 val homeFlag = countryAcroMap[homeCountryCode] ?: "unknown"
-
-                // Log homeFlag value for error testing
                 Log.d("LiveTournamentView", "Loading flag: $homeFlag.svg")
 
+                // Load country flag image from assets
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data("file:///android_asset/flags/$homeFlag.svg")
@@ -97,6 +103,7 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
                         .size(20.dp)
                         .padding(4.dp)
                 )
+
                 Text(
                     text = event.homeTeam.name,
                     style = TextStyle(
@@ -105,15 +112,18 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
                     )
                 )
             }
+
+            // VS separator
             Text(
                 text = "VS",
                 style = TextStyle(
                     fontSize = 16.sp,
                     fontFamily = lexendSemiBold
                 ),
-                modifier = modifier
-                    .padding(8.dp)
+                modifier = modifier.padding(8.dp)
             )
+
+            // Away player/team
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -125,12 +135,9 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
                     event.awayTeam.country?.alpha3
                 } ?: "unknown"
 
-                // Log awayCountryCode value for error testing
                 Log.d("LiveTournamentView", "Loading flag: $awayCountryCode")
 
                 val awayFlag = countryAcroMap[awayCountryCode] ?: "unknown"
-
-                // Log awayFlag value for error testing
                 Log.d("LiveTournamentView", "Loading flag: $awayFlag.svg")
 
                 AsyncImage(
@@ -143,6 +150,7 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
                         .size(20.dp)
                         .padding(4.dp)
                 )
+
                 Text(
                     text = event.awayTeam.name,
                     style = TextStyle(
@@ -153,56 +161,34 @@ fun LiveTournamentView(modifier: Modifier = Modifier, event: Event) {
             }
         }
 
-        // Match Progress / Score {
+        // ---------------------------
+        // Match Progress / Scores
+        // ---------------------------
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text(
-                text = "Set 1",
-                style = TextStyle(
-                    fontFamily = lexend
-                )
-            )
-            Text(
-                text = "Set 2",
-                style = TextStyle(
-                    fontFamily = lexend
-                )
-            )
-            Text(
-                text = "Set 3",
-                style = TextStyle(
-                    fontFamily = lexend
-                )
-            )
+            // Column headers for sets
+            Text(text = "Set 1", style = TextStyle(fontFamily = lexend))
+            Text(text = "Set 2", style = TextStyle(fontFamily = lexend))
+            Text(text = "Set 3", style = TextStyle(fontFamily = lexend))
         }
+
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text(
-                text = "${event.homeScore?.period1 ?: 0} - ${event.awayScore?.period1 ?: 0}",
-                style = TextStyle(
-                    fontFamily = lexendLight
-                )
-            )
-            Text(
-                text = "${event.homeScore?.period2 ?: 0} - ${event.awayScore?.period2 ?: 0}",
-                style = TextStyle(
-                    fontFamily = lexendLight
-                )
-            )
-            Text(
-                text = "${event.homeScore?.period3 ?: 0} - ${event.awayScore?.period3 ?: 0}",
-                style = TextStyle(
-                    fontFamily = lexendLight
-                )
-            )
+            // Scores for each set
+            Text(text = "${event.homeScore?.period1 ?: 0} - ${event.awayScore?.period1 ?: 0}", style = TextStyle(fontFamily = lexendLight))
+            Text(text = "${event.homeScore?.period2 ?: 0} - ${event.awayScore?.period2 ?: 0}", style = TextStyle(fontFamily = lexendLight))
+            Text(text = "${event.homeScore?.period3 ?: 0} - ${event.awayScore?.period3 ?: 0}", style = TextStyle(fontFamily = lexendLight))
         }
     }
 }
 
+// ---------------------------
+// Utility function to shorten tournament names by removing years, countries, and redundant words
+// ---------------------------
 fun shortenTournamentName(fullName: String): String {
     val tennisCountries = listOf(
         "USA", "Canada", "Spain", "France", "Italy", "Germany",
@@ -215,18 +201,19 @@ fun shortenTournamentName(fullName: String): String {
         "Punta Cana"
     )
 
+    // Patterns to remove from tournament names
     val patterns = listOf(
         "Women", "Men", "Boys", "Girls", "Doubles", "Singles", "Quad", "Wheelchair",
-        "\\d{4}",
-        "(?<=\\s)\\d+(?=\\s|$)",
-        "\\+H"
+        "\\d{4}",                  // years like 2024
+        "(?<=\\s)\\d+(?=\\s|$)",  // standalone numbers
+        "\\+H"                     // hospitality symbols
     ) + tennisCountries + tennisCities
 
     val regex = ("[ ,\\-]*(" + patterns.joinToString("|") + ")[ ,\\-]*")
         .toRegex(RegexOption.IGNORE_CASE)
 
     return fullName
-        .replace(regex, "")
-        .replace(Regex("\\s+"), " ")
-        .trim()
+        .replace(regex, "")          // remove matching patterns
+        .replace(Regex("\\s+"), " ") // normalize spaces
+        .trim()                       // trim leading/trailing spaces
 }

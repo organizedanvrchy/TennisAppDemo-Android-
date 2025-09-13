@@ -28,38 +28,45 @@ import com.google.firebase.Firebase
 
 @Composable
 fun HeaderView(
-    players: List<PlayerModel>,        // <-- we pass the list in
-    onOpenPlayer: (Int) -> Unit        // <-- and how to navigate
+    players: List<PlayerModel>,        // List of all players for search/autocomplete
+    onOpenPlayer: (Int) -> Unit        // Callback to navigate to player screen
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") } // Current user’s first name
 
-    // Firebase fetch
+    // ---------------------------
+    // Fetch user name from Firebase
+    // ---------------------------
     LaunchedEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
             Firebase.firestore.collection("users").document(uid).get()
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
+                        // Take first name only
                         val fullName = task.result.getString("name")
                         name = fullName?.split(" ")?.firstOrNull() ?: ""
                     } else {
-                        name = "Guest"
+                        name = "Guest" // fallback for errors
                     }
                 }
         } else {
-            name = "Guest"
+            name = "Guest" // Guest user
         }
     }
 
+    // ---------------------------
     // Search state
-    var showSearch by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
+    // ---------------------------
+    var showSearch by remember { mutableStateOf(false) } // Controls overlay visibility
+    var query by remember { mutableStateOf("") }         // Current search query
 
-    // Filtered matches (case-insensitive; startsWith first, then contains)
+    // ---------------------------
+    // Filtered players for search results
+    // ---------------------------
     val matches by remember(query, players) {
         mutableStateOf(
             players
-                .distinctBy { it.id }
+                .distinctBy { it.id } // Avoid duplicates
                 .filter {
                     val q = query.trim()
                     if (q.isBlank()) false
@@ -70,7 +77,9 @@ fun HeaderView(
     }
 
     Box(Modifier.fillMaxWidth()) {
-        // Header row
+        // ---------------------------
+        // Header row: Welcome + Search Icon
+        // ---------------------------
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -79,11 +88,13 @@ fun HeaderView(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Welcome text
             Column {
                 Text("Welcome Back", style = TextStyle(fontSize = 16.sp, fontFamily = lexendLight))
                 Text(name, style = TextStyle(fontSize = 22.sp, fontFamily = lexendBold))
             }
 
+            // Search button
             IconButton(
                 onClick = { showSearch = true },
                 colors = IconButtonDefaults.iconButtonColors(
@@ -97,9 +108,11 @@ fun HeaderView(
             }
         }
 
+        // ---------------------------
         // Overlay search UI
+        // ---------------------------
         if (showSearch) {
-            // Dim background (tap to close)
+            // Dim background; tap to close
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -107,7 +120,7 @@ fun HeaderView(
                     .clickable { showSearch = false }
             )
 
-            // Search card pinned to top
+            // Search card at top
             Surface(
                 tonalElevation = 4.dp,
                 shadowElevation = 8.dp,
@@ -119,6 +132,7 @@ fun HeaderView(
                     .statusBarsPadding()
             ) {
                 Column(Modifier.fillMaxWidth()) {
+                    // Search text field row
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -140,9 +154,10 @@ fun HeaderView(
                             placeholder = { Text(
                                 text = "Search players…",
                                 style = TextStyle(
-                                fontSize = 16.sp,
-                                fontFamily = lexendSemiBold
-                            )) },
+                                    fontSize = 16.sp,
+                                    fontFamily = lexendSemiBold
+                                )
+                            ) },
                             singleLine = true,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
@@ -158,54 +173,52 @@ fun HeaderView(
 
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
+                    // ---------------------------
                     // Type-ahead results
-                    if (query.isBlank()) {
-                        Text(
-                            "Start typing a name",
-                            modifier = Modifier.padding(12.dp),
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontFamily = lexendLight
-                            ),
-                            color = Color.Gray
-                        )
-                    } else if (matches.isEmpty()) {
-                        Text(
-                            "No matches for \"$query\"",
-                            modifier = Modifier.padding(12.dp),
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontFamily = lexendLight
-                            ),
-                            color = Color.Gray
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 0.dp, max = 360.dp)
-                        ) {
-                            items(matches) { player ->
-                                ListItem(
-                                    headlineContent = { Text(
-                                        text = player.name,
-                                        style = TextStyle(
-                                        fontSize = 16.sp,
-                                        fontFamily = lexendSemiBold
-                                    )) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            showSearch = false
-                                            query = ""
-                                            onOpenPlayer(player.id) // navigate
-                                        }
-                                )
-                                HorizontalDivider(
-                                    Modifier,
-                                    DividerDefaults.Thickness,
-                                    DividerDefaults.color
-                                )
+                    // ---------------------------
+                    when {
+                        query.isBlank() -> {
+                            Text(
+                                "Start typing a name",
+                                modifier = Modifier.padding(12.dp),
+                                style = TextStyle(fontSize = 12.sp, fontFamily = lexendLight),
+                                color = Color.Gray
+                            )
+                        }
+                        matches.isEmpty() -> {
+                            Text(
+                                "No matches for \"$query\"",
+                                modifier = Modifier.padding(12.dp),
+                                style = TextStyle(fontSize = 12.sp, fontFamily = lexendLight),
+                                color = Color.Gray
+                            )
+                        }
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 0.dp, max = 360.dp)
+                            ) {
+                                items(matches) { player ->
+                                    ListItem(
+                                        headlineContent = { Text(
+                                            text = player.name,
+                                            style = TextStyle(fontSize = 16.sp, fontFamily = lexendSemiBold)
+                                        ) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showSearch = false
+                                                query = ""
+                                                onOpenPlayer(player.id) // Navigate to player
+                                            }
+                                    )
+                                    HorizontalDivider(
+                                        Modifier,
+                                        DividerDefaults.Thickness,
+                                        DividerDefaults.color
+                                    )
+                                }
                             }
                         }
                     }
@@ -216,6 +229,7 @@ fun HeaderView(
         }
     }
 }
+
 
 // Alt Search Box Animation
 //    AnimatedVisibility(
