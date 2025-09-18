@@ -175,3 +175,135 @@ The system shall allow users to view and edit profile information (username, ema
 - Non-Functional System Requirements:
     - 1.9.5NF Profile updates shall complete within 2 seconds on a 4G network. (Performance)
     - 1.9.6NF Images uploaded for profile pictures shall be validated (≤ 5 MB, JPEG/PNG/WebP) and downscaled to ≤ 512×512 px server-side. (Reliability/Security)
+
+---
+
+## Use Cases
+| Use Case | Description                         | Priority |
+| -------- | ----------------------------------- | -------- |
+| UC 5.1   | Navigate with Bottom Navigation Bar | High     |
+| UC 5.2   | View Live Match Scores              | High     |
+| UC 5.3   | View Player Profile                 | High     |
+| UC 5.4   | View Details on Past Tournament     | High     |
+| UC 5.5   | Register Account                    | Low      |
+| UC 5.6   | Login with Account                  | Low      |
+| UC 5.7   | Live News                           | Medium   |
+| UC 5.8   | Search for Players                  | Low      |
+| UC 5.9   | Manage User Profile                 | Low      |
+
+### UC 5.1 — Navigate with Bottom Navigation Bar
+| Field                     | Details                                                                                                                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**                 | Navigate with Bottom Navigation Bar                                                                                                                                                                                                          |
+| **Description**           | The user navigates between Home, News, Profile and Logout using the persistent bottom navigation bar inside Scaffold (AppNavigation). Logout uses AuthViewModel to sign out, delete guest user doc if needed, then navigates to auth screen. |
+| **Actors**                | End User (guest, regular), Firebase.auth, Firestore                                                                                                                                                                                          |
+| **Stimulus**              | User taps a bottom navigation item                                                                                                                                                                                                           |
+| **Preconditions**         | navController initialized, AuthViewModel available, bottom bar visible                                                                                                                                                                       |
+| **Postconditions**        | Navigation occurs, active item highlighted, session intact. On Logout → guest doc deleted, auth cleared, navigated to login                                                                                                                  |
+| **Main Success Scenario** | User taps nav item → system navigates with `NavHostController.navigate`. On Logout → AuthViewModel handles sign out and redirects.                                                                                                           |
+| **Extensions**            | Ignore rapid taps (<300ms), handle async guest deletion, handle sign-out failures                                                                                                                                                            |
+| **Priority**              | 3                                                                                                                                                                                                                                            |
+
+### UC 5.2 — View Live Match Scores
+| Field                     | Details                                                                                                          |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Title**                 | View Live Match Scores                                                                                           |
+| **Description**           | The user views ongoing tennis match scores via a LiveTournament card. Tapping navigates to LiveTournamentScreen. |
+| **Actors**                | End User, OkHttp + Firebase Remote Config                                                                        |
+| **Stimulus**              | User opens HomePage or taps LiveTournament card                                                                  |
+| **Preconditions**         | App running, TennisViewModel initialized, live data available                                                    |
+| **Postconditions**        | Live event shown; if tapped → navigate to LiveTournamentScreen; if no events → placeholder shown                 |
+| **Main Success Scenario** | Home feed loads, ViewModel fetches live events, displays first event. Tapping → full LiveTournamentScreen        |
+| **Extensions**            | No events → show placeholder; Partial data → use defaults; Ignore rapid taps; Fetch failure → retry option       |
+| **Priority**              | 2                                                                                                                |
+
+### UC 5.3 — View Player Profile
+| Field                     | Details                                                                                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**                 | View Player Profile                                                                                                                                            |
+| **Description**           | User navigates to `players/{id}`. App shows PlayerScreen with header (name, flag, rank, points) and body (extended details). Data fetched via TennisViewModel. |
+| **Actors**                | End User, OkHttp + Firebase Remote Config                                                                                                                      |
+| **Stimulus**              | User taps player in stats list or search results                                                                                                               |
+| **Preconditions**         | Nav route registered, TennisViewModel + TennisRepository configured                                                                                            |
+| **Postconditions**        | Player header and details displayed; UI responsive with loading/fallback states                                                                                |
+| **Main Success Scenario** | User taps player → NavHost navigates → PlayerScreen loads rankings + details → UI updates with data                                                            |
+| **Extensions**            | Null ID → show “Unknown”; API fail → fallback; Missing flag → placeholder; Ranking missing → show “-”                                                          |
+| **Priority**              | 1                                                                                                                                                              |
+
+### UC 5.4 — View Details on Past Tournament
+| Field                     | Details                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Title**                 | View Details on Past Tournament                                                                                         |
+| **Description**           | User navigates to `tournament/{id}`. App shows TournamentScreen with header and expandable rows for rounds and results. |
+| **Actors**                | Guest User, Registered User                                                                                             |
+| **Stimulus**              | User selects a tournament from HomeScreen                                                                               |
+| **Preconditions**         | API data retrieved, tournament ID valid                                                                                 |
+| **Postconditions**        | Tournament screen displayed with header and expandable round rows                                                       |
+| **Main Success Scenario** | User taps tournament → data loaded → expandable rows show results by round                                              |
+| **Extensions**            | Missing data → placeholders; Network error → cached data; Unmapped rounds → only header shown                           |
+| **Priority**              | 5                                                                                                                       |
+
+### UC 5.5 — Register Account
+| Field                     | Details                                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**                 | Register Account                                                                                                                   |
+| **Description**           | User signs up by providing name, email, password, security question & answer. System creates account in Firebase.                  |
+| **Actors**                | Unregistered User                                                                                                                  |
+| **Stimulus**              | User selects Sign-Up                                                                                                               |
+| **Preconditions**         | Guest not authenticated, auth service available, valid input                                                                       |
+| **Postconditions**        | Account created, stored in Firebase, user redirected to login                                                                      |
+| **Main Success Scenario** | User enters valid data → account created → login screen                                                                            |
+| **Extensions**            | Invalid email/password → error; Empty fields → error; Duplicate email → error; Profile creation fails → error; No internet → error |
+| **Priority**              | 7                                                                                                                                  |
+
+### UC 5.6 — Login with Account
+| Field                     | Details                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| **Title**                 | Login with Account                                                                 |
+| **Description**           | Registered user enters email + password. Firebase verifies and authenticates.      |
+| **Actors**                | Registered User, Unregistered User                                                 |
+| **Stimulus**              | User taps Login                                                                    |
+| **Preconditions**         | User not authenticated, auth service available                                     |
+| **Postconditions**        | User authenticated, session tokens stored                                          |
+| **Main Success Scenario** | User enters credentials → verified → profile fetched → redirected to home/profile  |
+| **Extensions**            | Invalid credentials → error; Empty fields → error; Network issues → local handling |
+| **Priority**              | 8                                                                                  |
+
+### UC 5.7 — Live News
+| Field                     | Details                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| **Title**                 | Live News                                                                                   |
+| **Description**           | User views real-time news feed with headlines and summaries.                                |
+| **Actors**                | Guest User, Registered User                                                                 |
+| **Stimulus**              | User opens News tab or pulls to refresh                                                     |
+| **Preconditions**         | News API available, device online or cached data                                            |
+| **Postconditions**        | Recent news list displayed, links to full articles                                          |
+| **Main Success Scenario** | System fetches latest news, sorts by freshness/relevance, displays feed                     |
+| **Extensions**            | API unavailable → cached news; No items → “No news right now”; Link fail → retry suggestion |
+| **Priority**              | 6                                                                                           |
+
+### UC 5.8 — Search for Players
+| Field                     | Details                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| **Title**                 | Search for Players                                                                 |
+| **Description**           | User searches by player name. System shows results or “no results” message.        |
+| **Actors**                | Guest User, Registered User                                                        |
+| **Stimulus**              | User enters text in search bar                                                     |
+| **Preconditions**         | Player index available, device online or cached results                            |
+| **Postconditions**        | Results shown or no results displayed                                              |
+| **Main Success Scenario** | User enters query → system fetches results → list displayed → user selects profile |
+| **Extensions**            | No matches → “No players found”; Fetch fails → retry option                        |
+| **Priority**              | 4                                                                                  |
+
+### UC 5.9 — Manage User Profile
+| Field                     | Details                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| **Title**                 | Manage User Profile                                                                      |
+| **Description**           | User edits profile info (name, avatar, password). Changes validated and saved.           |
+| **Actors**                | Registered User                                                                          |
+| **Stimulus**              | User opens Profile → Edit, submits changes                                               |
+| **Preconditions**         | User authenticated, profile record exists                                                |
+| **Postconditions**        | Profile updated, UI refreshed                                                            |
+| **Main Success Scenario** | User edits fields → system validates → updates store → confirms success                  |
+| **Extensions**            | Validation fail → inline errors; Password update → reauth required; Storage fail → retry |
+| **Priority**              | 9                                                                                        |
